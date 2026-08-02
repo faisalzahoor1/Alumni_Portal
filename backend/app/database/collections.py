@@ -2,16 +2,10 @@
 
 class Collections:
 
+    USERS = "users"
     STUDENTS = "students"
-
     POSTS = "posts"
-
     NOTIFICATIONS = "notifications"
-
-    JOBS = "jobs"
-
     EVENTS = "events"
-
-    INDUSTRY = "industry"
-
-    ALUMNI = "alumni"
+    JOBS = "jobs"
+    MENTORSHIPS = "mentorships"

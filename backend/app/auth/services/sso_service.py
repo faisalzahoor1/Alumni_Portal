@@ -7,7 +7,7 @@ class DummySSOService:
     async def login(registration_no: str, password: str):
 
         return {
-            "student_id": "student_001",
+            "user_id": "student_001",
             "registration_no": registration_no,
             "name": "Muhammad Faisal Zahoor",
             "email": "student@cui.edu.pk",

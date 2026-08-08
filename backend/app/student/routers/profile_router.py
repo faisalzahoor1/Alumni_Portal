@@ -7,7 +7,7 @@ from app.student.services.student_service import StudentService
 
 router = APIRouter(
     prefix="/student",
-    tags=["Student"]
+    tags=["Student Profile"]
 )
 
 

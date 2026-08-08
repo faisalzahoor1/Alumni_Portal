@@ -27,7 +27,7 @@ async def verify_email(request: VerifyOTPRequest):
 async def login(request: LoginRequest):
     return await auth_service.student_login(request)
 
-@router.post("/login/user", response_model=TokenResponse)
+@router.post("/user/login", response_model=TokenResponse)
 async def users_login(request: UserLoginRequest):
     return await auth_service.user_login(request)
 

@@ -56,6 +56,79 @@ class AuthService:
         )
 
 
+    async def user_login(self,request: UserLoginRequest) -> TokenResponse:
+
+        # 1. Find user by email
+        user = await UserRepository.find_by_email(
+            request.email
+        )
+
+        if not user:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+
+        # 2. Check whether email is verified
+        if not user.is_verified:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Please verify your email first"
+            )
+
+        # 3. Verify password
+        password_valid = verify_password(
+            request.password,
+            user.hashed_password
+        )
+
+        if not password_valid:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid email or password"
+            )
+
+        # 4. Make sure only allowed non-student roles
+        if user.role not in [
+            Roles.ADMIN,
+            Roles.ALUMNI,
+            Roles.INDUSTRY
+        ]:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="This login method is not available for this role"
+            )
+
+        # 5. Create access token
+        access_token = create_access_token(
+            {
+                "sub": user.id,
+                "role": user.role
+            }
+        )
+
+        # 6. Create refresh token
+        refresh_token = create_refresh_token(
+            {
+                "sub": user.id,
+                "role": user.role
+            }
+        )
+
+        # 7. Save refresh token in Redis
+        await RedisService.save_refresh_token(
+            user.id,
+            refresh_token
+        )
+
+        # 8. Return tokens
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            role=user.role
+        )
+
+
 
     async def signup(self, request: SignupRequest) -> SignupResponse:
 
@@ -73,15 +146,6 @@ class AuthService:
                     status_code=status.HTTP_409_CONFLICT,
                     detail="Email already exists"
                 )
-
-            # User exists but NOT verified
-            hashed_password = hash_password(request.password)
-
-            await UserRepository.update_unverified_user(
-                request.email,
-                hashed_password,
-                request.role
-            )
 
             otp = OTPService.generate_otp()
 

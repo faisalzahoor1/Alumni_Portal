@@ -93,14 +93,14 @@ class UserRepository:
                 "email": email
             }
         )
-    @staticmethod
-    async def update_unverified_user(email: str,hashed_password: str,role: str):
-        await mongodb.database[Collections.USERS].update_one(
-            {"email": email},
-            {
-                "$set": {
-                    "is_verified": True,
-                    "updated_at": datetime.utcnow()
-                }
-            }
-        )
+    # @staticmethod
+    # async def update_unverified_user(email: str,hashed_password: str,role: str):
+    #     await mongodb.database[Collections.USERS].update_one(
+    #         {"email": email},
+    #         {
+    #             "$set": {
+    #                 "is_verified": True,
+    #                 "updated_at": datetime.utcnow()
+    #             }
+    #         }
+    #     )

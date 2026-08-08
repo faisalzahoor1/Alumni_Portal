@@ -15,6 +15,10 @@ from app.auth.services.sso_service import DummySSOService
 from app.core.constants import Roles
 from fastapi import HTTPException, status
 
+
+from app.student.models.student import Student
+from app.student.repository.student_repository import StudentRepository
+
 from app.core.security import (
     create_access_token,
     create_refresh_token,
@@ -31,21 +35,40 @@ class AuthService:
             request.password
         )
 
-        access_token = create_access_token(
-            {
-                "sub": user["user_id"],
-                "role": user["role"]
-            }
+
+    # -----------------------------------------
+    # 2. Create/update student profile
+    # -----------------------------------------
+
+        existing_student = await StudentRepository.find_by_registration_no(
+            user["registration_no"]
         )
+
+        if not existing_student:
+
+            student = Student(
+                registration_no=user["registration_no"],
+                name=user["name"],
+                email=user["email"]
+            )
+
+            await StudentRepository.create_student(student)
+
+            access_token = create_access_token(
+                {
+                    "sub": user["registration_no"],
+                    "role": user["role"]
+                }
+            )
 
         refresh_token = create_refresh_token(
             {
-                "sub": user["user_id"]
+                "sub": user["registration_no"]
             }
         )
 
         await RedisService.save_refresh_token(
-            user["user_id"],
+            user["registration_no"],
             refresh_token
         )
 
@@ -253,4 +276,80 @@ class AuthService:
             access_token=access_token,
             refresh_token=refresh_token,
             role=user.role
+        )
+
+    async def refresh_token(self,refresh_token: str) -> TokenResponse:
+
+        # -----------------------------------------
+        # 1. Decode refresh token
+        # -----------------------------------------
+
+        try:
+            payload = decode_token(refresh_token)
+
+        except Exception:
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid or expired refresh token"
+            )
+
+        # -----------------------------------------
+        # 2. Get student identity
+        # -----------------------------------------
+
+        registration_no = payload.get("sub")
+
+        if not registration_no:
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+
+        # -----------------------------------------
+        # 3. Check refresh token in Redis
+        # -----------------------------------------
+
+        stored_token = await RedisService.get_refresh_token(
+            registration_no
+        )
+
+        if not stored_token:
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Refresh token not found"
+            )
+
+        # -----------------------------------------
+        # 4. Compare tokens
+        # -----------------------------------------
+
+        if stored_token != refresh_token:
+
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid refresh token"
+            )
+
+        # -----------------------------------------
+        # 5. Create NEW access token
+        # -----------------------------------------
+
+        access_token = create_access_token(
+            {
+                "sub": registration_no,
+                "role": Roles.STUDENT
+            }
+        )
+
+        # -----------------------------------------
+        # 6. Return new access token
+        # -----------------------------------------
+
+        return TokenResponse(
+            access_token=access_token,
+            refresh_token=refresh_token,
+            role=Roles.STUDENT
         )

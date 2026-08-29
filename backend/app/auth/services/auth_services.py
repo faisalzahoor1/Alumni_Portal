@@ -54,12 +54,12 @@ class AuthService:
 
             await StudentRepository.create_student(student)
 
-            access_token = create_access_token(
-                {
-                    "sub": user["registration_no"],
-                    "role": user["role"]
-                }
-            )
+        access_token = create_access_token(
+            {
+                "sub": user["registration_no"],
+                "role": user["role"]
+            }
+        )
 
         refresh_token = create_refresh_token(
             {

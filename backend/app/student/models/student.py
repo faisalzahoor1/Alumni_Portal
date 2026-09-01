@@ -3,6 +3,19 @@ from datetime import datetime, timezone
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
+
+class CVInfo(BaseModel):
+    file_name: str
+    file_url: str
+    file_size: int
+    content_type: str = "application/pdf"
+
+    uploaded_at: datetime = Field(
+        default_factory=lambda: datetime.now(timezone.utc)
+    )
+
+
+
 class Student(BaseModel):
 
     model_config = ConfigDict(
@@ -21,6 +34,8 @@ class Student(BaseModel):
     linkedin_url: str | None = None
 
     instagram_url: str | None = None
+
+    cv: CVInfo | None = None
 
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc)

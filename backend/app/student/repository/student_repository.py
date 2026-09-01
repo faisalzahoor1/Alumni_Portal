@@ -84,7 +84,7 @@ class StudentRepository:
         return Student(**document)
 
     @staticmethod
-    async def update_additional_info(registration_no: str,linkedin_url: str | None,instagram_url: str | None):
+    async def update_additional_info(registration_no: str,linkedin_url: str | None,instagram_url: str | None, cv_data:dict | None = None):
 
         update_data = {"updated_at": datetime.now(timezone.utc)}
 
@@ -93,6 +93,9 @@ class StudentRepository:
 
         if instagram_url is not None:
             update_data["instagram_url"] = instagram_url
+
+        if cv_data is not None:
+            update_data["cv"] = cv_data
 
         await mongodb.database[Collections.STUDENTS].update_one(
             {

@@ -25,3 +25,5 @@ loguru
 pytest
 
 pytest-asyncio
+
+cloudinary

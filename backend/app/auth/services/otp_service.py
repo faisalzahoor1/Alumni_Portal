@@ -1,4 +1,4 @@
-import random
+import secrets
 
 from app.database import redis
 from app.core.constants import OTP, RedisKeys
@@ -13,7 +13,7 @@ class OTPService:
         """
 
         return "".join(
-            random.choices("0123456789", k=OTP.LENGTH)
+            secrets.choices("0123456789", k=OTP.LENGTH)
         )
 
     @staticmethod

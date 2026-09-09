@@ -47,9 +47,6 @@ pwd_context = CryptContext(
 
 
 def hash_password(password: str) -> str:
-    print("Password:", password)
-    print("Type:", type(password))
-    print("Length:", len(password))
     return pwd_context.hash(password)
 
 

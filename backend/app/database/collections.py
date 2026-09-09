@@ -9,3 +9,5 @@ class Collections:
     EVENTS = "events"
     JOBS = "jobs"
     MENTORSHIPS = "mentorships"
+    INDUSTRY_PROFILES = "industry_profiles"
+    APPLICATIONS = "applications"

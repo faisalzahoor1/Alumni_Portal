@@ -27,3 +27,5 @@ pytest
 pytest-asyncio
 
 cloudinary
+
+bcrypt==4.0.1

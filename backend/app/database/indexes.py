@@ -52,3 +52,22 @@ async def create_indexes():
     await mongodb.database[Collections.APPLICATIONS].create_index(
         "applicant_user_id"
     )
+
+    # Alumni Module Indexes
+    await mongodb.database[Collections.ALUMNI_PROFILES].create_index(
+        "user_id",
+        unique=True
+    )
+
+    # Posts Indexes
+    await mongodb.database[Collections.POSTS].create_index(
+        "author_id"
+    )
+
+    await mongodb.database[Collections.POSTS].create_index(
+        "author_role"
+    )
+
+    await mongodb.database[Collections.NOTIFICATIONS].create_index(
+        "recipient_id"
+    )

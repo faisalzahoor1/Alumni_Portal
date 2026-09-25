@@ -11,3 +11,4 @@ class Collections:
     MENTORSHIPS = "mentorships"
     INDUSTRY_PROFILES = "industry_profiles"
     APPLICATIONS = "applications"
+    ALUMNI_PROFILES = "alumni_profiles"

@@ -34,7 +34,8 @@ class UserRepository:
         return User(**document)
     @staticmethod
     async def find_by_id(user_id: str) -> User | None:
-
+        if not ObjectId.is_valid(user_id):
+            return None
         document = await mongodb.database[
             Collections.USERS
         ].find_one(

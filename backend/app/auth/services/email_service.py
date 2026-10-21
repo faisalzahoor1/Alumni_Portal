@@ -4,34 +4,18 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from app.core.config import settings
+from app.core.constants import OTP
 
 
 class EmailService:
 
     @staticmethod
-    async def send_otp(email: str, otp: str):
-
-        subject = "Alumni Portal - Email Verification"
-
-        body = f"""
-Hello,
-
-Your verification code is:
-
-{otp}
-
-This code will expire in 60 seconds.
-
-If you didn't request this code, please ignore this email.
-
-Regards,
-Alumni Portal Team
-"""
+    async def send_email(to: str, subject: str, body: str):
 
         message = MIMEMultipart()
 
         message["From"] = settings.SMTP_FROM
-        message["To"] = email
+        message["To"] = to
         message["Subject"] = subject
 
         message.attach(MIMEText(body, "plain"))
@@ -49,3 +33,25 @@ Alumni Portal Team
             )
 
             server.send_message(message)
+
+    @staticmethod
+    async def send_otp(email: str, otp: str):
+
+        subject = "Alumni Portal - Email Verification"
+
+        body = f"""
+Hello,
+
+Your verification code is:
+
+{otp}
+
+This code will expire in {OTP.EXPIRY_SECONDS // 60} minutes.
+
+If you didn't request this code, please ignore this email.
+
+Regards,
+Alumni Portal Team
+"""
+
+        await EmailService.send_email(email, subject, body)

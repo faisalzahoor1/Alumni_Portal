@@ -1,10 +1,12 @@
 from pydantic import BaseModel, EmailStr, Field
 
+from app.core.constants import OTP
+
 
 class VerifyOTPRequest(BaseModel):
     email: EmailStr
 
     otp: str = Field(
-        min_length=6,
-        max_length=6
+        min_length=OTP.LENGTH,
+        max_length=OTP.LENGTH
     )

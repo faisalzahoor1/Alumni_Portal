@@ -21,6 +21,7 @@ class Post(BaseModel):
     post_type: str = "general"  # "achievement", "job_opportunity", "announcement", "general"
     tags: List[str] = Field(default_factory=list)
     likes_count: int = 0
+    dislikes_count: int = 0
     comments_count: int = 0
     is_public: bool = True  # Visible in feed
 

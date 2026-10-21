@@ -3,7 +3,7 @@ from fastapi import HTTPException, UploadFile, status
 from app.alumni.repositories.profile_repository import AlumniProfileRepository
 from app.alumni.models.alumni import AlumniProfile
 from app.alumni.schemas.profile_schema import AlumniProfileUpdate
-from app.alumni.services.media_service import MediaService
+from app.common.avatar_service import AvatarService
 
 
 class AlumniProfileService:
@@ -41,15 +41,17 @@ class AlumniProfileService:
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Profile not found"
             )
+        await AvatarService.propagate(user_id, avatar_url)
         return profile
 
     @staticmethod
     async def upload_avatar(user_id: str, file: UploadFile) -> AlumniProfile:
-        avatar_url = await MediaService.upload_image(file, folder="alumni_portal/avatars")
+        avatar_url = await AvatarService.upload(file, folder="alumni_portal/avatars")
         profile = await AlumniProfileRepository.update_profile(user_id, {"avatar_url": avatar_url})
         if not profile:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Profile not found"
             )
+        await AvatarService.propagate(user_id, avatar_url)
         return profile

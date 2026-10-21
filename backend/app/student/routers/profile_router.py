@@ -31,3 +31,10 @@ async def update_additional_info(
     )
 
     return await StudentService.update_additional_info(registration_no=current_user["registration_no"],request=request, cv=cv)
+
+
+@router.post("/avatar", response_model=StudentResponse)
+async def upload_avatar(file: UploadFile = File(...), current_user: dict = Depends(get_current_student)):
+    """Upload the student's profile picture."""
+    return await StudentService.upload_avatar(current_user["registration_no"], file)
+

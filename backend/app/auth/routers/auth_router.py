@@ -5,6 +5,7 @@ from app.auth.schemas.token import TokenResponse
 from app.auth.schemas.refresh import RefreshRequest
 from app.auth.schemas.signup import SignupRequest, SignupResponse
 from app.auth.schemas.otp import VerifyOTPRequest
+from app.auth.schemas.verify import VerifyEmailResponse
 from app.auth.services.auth_services import AuthService
 
 router = APIRouter(
@@ -20,7 +21,7 @@ async def signup(request: SignupRequest):
     return await auth_service.signup(request)
 
 
-@router.post("/verify-email",response_model=TokenResponse)
+@router.post("/verify-email",response_model=VerifyEmailResponse)
 async def verify_email(request: VerifyOTPRequest):
     return await auth_service.verify_email(request)
 
@@ -31,6 +32,10 @@ async def login(request: LoginRequest):
 @router.post("/user/login", response_model=TokenResponse)
 async def users_login(request: UserLoginRequest):
     return await auth_service.user_login(request)
+
+@router.post("/admin/login", response_model=TokenResponse)
+async def admin_login(request: UserLoginRequest):
+    return await auth_service.admin_login(request)
 
 @router.post("/refresh",response_model=TokenResponse)
 async def refresh_token(request: RefreshRequest):

@@ -2,9 +2,11 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, ConfigDict, Field
 
+from app.core.constants import Posts
+
 
 class PostCreate(BaseModel):
-    title: str = Field(..., min_length=1, max_length=250)
+    title: str = Field(..., min_length=1, max_length=Posts.TITLE_MAX_LENGTH)
     content: str = Field(..., min_length=1)
     media_urls: Optional[List[str]] = []
     job_apply_url: Optional[str] = None
@@ -17,7 +19,7 @@ class PostCreate(BaseModel):
 
 
 class PostUpdate(BaseModel):
-    title: Optional[str] = Field(None, min_length=1, max_length=250)
+    title: Optional[str] = Field(None, min_length=1, max_length=Posts.TITLE_MAX_LENGTH)
     content: Optional[str] = Field(None, min_length=1)
     media_urls: Optional[List[str]] = None
     job_apply_url: Optional[str] = None
@@ -47,6 +49,7 @@ class PostResponse(BaseModel):
     post_type: str
     tags: List[str] = []
     likes_count: int = 0
+    dislikes_count: int = 0
     comments_count: int = 0
     is_public: bool = True
     created_at: datetime

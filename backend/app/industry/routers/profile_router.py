@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from app.auth.models.user import User
 from app.auth.dependensies import get_current_industry_user
 from app.industry.schemas.profile_schema import IndustryProfileUpdate, IndustryProfileResponse
@@ -17,3 +17,9 @@ async def get_profile(current_user: User = Depends(get_current_industry_user)):
 async def update_profile(data: IndustryProfileUpdate, current_user: User = Depends(get_current_industry_user)):
     profile = await IndustryProfileService.update_profile(current_user.id, data)
     return profile
+
+
+@router.post("/logo", response_model=IndustryProfileResponse)
+async def upload_logo(file: UploadFile = File(...), current_user: User = Depends(get_current_industry_user)):
+    """Upload the company logo (the industry profile picture)."""
+    return await IndustryProfileService.upload_logo(current_user.id, file)

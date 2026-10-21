@@ -6,6 +6,8 @@ from app.student.schemas.student import StudentResponse, CVResponse
 from app.student.schemas.additional_info import StudentAdditionalInfoRequest
 from app.student.repository.student_repository import StudentRepository
 from app.auth.services.file_storage_service import FileStorageService
+from app.common.avatar_service import AvatarService
+from app.core.constants import CV
 
 
 class StudentService:
@@ -46,7 +48,8 @@ class StudentService:
             name=created_student.name,
             email=created_student.email,
             linkedin_url=created_student.linkedin_url,
-            instagram_url=created_student.instagram_url
+            instagram_url=created_student.instagram_url,
+            avatar_url=created_student.avatar_url
         )
 
     @staticmethod
@@ -67,6 +70,7 @@ class StudentService:
             email=student.email,
             linkedin_url=student.linkedin_url,
             instagram_url=student.instagram_url,
+            avatar_url=student.avatar_url,
             cv=CVResponse(**student.cv.model_dump()) if student.cv else None
         )
 
@@ -91,10 +95,9 @@ class StudentService:
             name=student.name,
             email=student.email,
             linkedin_url=student.linkedin_url,
-            instagram_url=student.instagram_url
+            instagram_url=student.instagram_url,
+            avatar_url=student.avatar_url
         )
-
-    MAX_CV_SIZE = 5 * 1024 * 1024  # 5 MB
 
     @staticmethod
     async def update_additional_info(registration_no: str,request: StudentAdditionalInfoRequest, cv: UploadFile | None = None) -> StudentResponse:
@@ -110,7 +113,7 @@ class StudentService:
         if cv:
 
             # Check content type
-            if cv.content_type != "application/pdf":
+            if cv.content_type not in CV.CONTENT_TYPES:
 
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -123,11 +126,11 @@ class StudentService:
 
 
             # Check size
-            if len(contents) > StudentService.MAX_CV_SIZE:
+            if len(contents) > CV.MAX_SIZE_BYTES:
 
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="CV size must not exceed 5 MB"
+                    detail=f"CV size must not exceed {CV.MAX_SIZE_BYTES // (1024 * 1024)} MB"
                 )
 
 
@@ -181,5 +184,17 @@ class StudentService:
             email=updated_student.email,
             linkedin_url=updated_student.linkedin_url,
             instagram_url=updated_student.instagram_url,
+            avatar_url=updated_student.avatar_url,
             cv=updated_student.cv
         )
+
+    @staticmethod
+    async def upload_avatar(registration_no: str, file: UploadFile) -> StudentResponse:
+        student = await StudentRepository.find_by_registration_no(registration_no)
+        if not student:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
+        avatar_url = await AvatarService.upload(file, folder="alumni_portal/student_avatars")
+        await StudentRepository.update_avatar(registration_no, avatar_url)
+        await AvatarService.propagate(student.id, avatar_url)
+        return await StudentService.get_student_by_registration_no(registration_no)
+

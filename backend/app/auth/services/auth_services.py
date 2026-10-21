@@ -12,7 +12,8 @@ from app.auth.services.otp_service import OTPService
 from app.auth.services.redis_service import RedisService
 from app.auth.services.sso_service import DummySSOService
 
-from app.core.constants import Roles
+from app.core.constants import Approval, Roles
+from app.auth.schemas.verify import VerifyEmailResponse
 from fastapi import HTTPException, status
 
 
@@ -22,6 +23,7 @@ from app.student.repository.student_repository import StudentRepository
 from app.core.security import (
     create_access_token,
     create_refresh_token,
+    decode_token,
     hash_password,
     verify_password,
 )
@@ -111,9 +113,8 @@ class AuthService:
                 detail="Invalid email or password"
             )
 
-        # 4. Make sure only allowed non-student roles
+        # 4. Make sure only allowed non-student roles (admins use the admin portal)
         if user.role not in [
-            Roles.ADMIN,
             Roles.ALUMNI,
             Roles.INDUSTRY
         ]:
@@ -121,6 +122,9 @@ class AuthService:
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="This login method is not available for this role"
             )
+
+        # 4b. Self-registered accounts need an admin's approval first
+        self._ensure_approved(user)
 
         # 5. Create access token
         access_token = create_access_token(
@@ -196,7 +200,8 @@ class AuthService:
             email=request.email,
             hashed_password=hashed_password,
             role=request.role,
-            is_verified=False
+            is_verified=False,
+            approval_status=Approval.PENDING if request.role in Approval.ROLES else None
         )
 
         await UserRepository.create_user(user)
@@ -219,7 +224,7 @@ class AuthService:
 
     from fastapi import HTTPException, status
 
-    async def verify_email(self,request: VerifyOTPRequest) -> TokenResponse:
+    async def verify_email(self,request: VerifyOTPRequest) -> VerifyEmailResponse:
 
         user = await UserRepository.find_by_email(
             request.email
@@ -232,7 +237,6 @@ class AuthService:
             )
 
         if user.is_verified:
-            print(user.model_dump())
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Email is already verified"
@@ -253,6 +257,23 @@ class AuthService:
             request.email
         )
 
+        # Self-registered roles wait for an admin before they can sign in
+        if user.role in Approval.ROLES and user.approval_status != Approval.APPROVED:
+
+            from app.admin.services.notification_service import AdminNotificationService
+
+            await AdminNotificationService.notify(
+                title="New registration request",
+                message=f"{user.email} wants to join as {user.role}.",
+                type="registration",
+                related_entity_id=user.id
+            )
+
+            return VerifyEmailResponse(
+                message="Your email is verified. An admin will review your account and email you once you can sign in.",
+                approval_status=Approval.PENDING
+            )
+
         access_token = create_access_token(
             {
                 "sub": user.id,
@@ -271,6 +292,45 @@ class AuthService:
             user.id,
             refresh_token
         )
+
+        return VerifyEmailResponse(
+            message="Email verified",
+            approval_status=user.approval_status,
+            access_token=access_token,
+            refresh_token=refresh_token,
+            role=user.role
+        )
+
+    @staticmethod
+    def _ensure_approved(user):
+
+        if user.role not in Approval.ROLES or user.approval_status in (None, Approval.APPROVED):
+            return
+
+        if user.approval_status == Approval.REJECTED:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your registration was not approved. Please contact the university for details."
+            )
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your account is awaiting admin approval. We'll email you as soon as you can sign in."
+        )
+
+    async def admin_login(self, request: UserLoginRequest) -> TokenResponse:
+
+        user = await UserRepository.find_by_email(request.email)
+
+        if not user or user.role != Roles.ADMIN or not verify_password(request.password, user.hashed_password):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin email or password"
+            )
+
+        access_token = create_access_token({"sub": user.id, "role": user.role})
+        refresh_token = create_refresh_token({"sub": user.id, "role": user.role})
+        await RedisService.save_refresh_token(user.id, refresh_token)
 
         return TokenResponse(
             access_token=access_token,
@@ -337,10 +397,12 @@ class AuthService:
         # 5. Create NEW access token
         # -----------------------------------------
 
+        role = payload.get("role") or Roles.STUDENT
+
         access_token = create_access_token(
             {
                 "sub": registration_no,
-                "role": Roles.STUDENT
+                "role": role
             }
         )
 
@@ -351,5 +413,5 @@ class AuthService:
         return TokenResponse(
             access_token=access_token,
             refresh_token=refresh_token,
-            role=Roles.STUDENT
+            role=role
         )

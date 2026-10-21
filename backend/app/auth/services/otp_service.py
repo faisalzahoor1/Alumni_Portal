@@ -13,7 +13,7 @@ class OTPService:
         """
 
         return "".join(
-            secrets.choices("0123456789", k=OTP.LENGTH)
+            secrets.choice("0123456789") for _ in range(OTP.LENGTH)
         )
 
     @staticmethod

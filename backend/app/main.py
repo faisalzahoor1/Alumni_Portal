@@ -8,6 +8,11 @@ from app.middlewares.logging_middleware import LoggingMiddleware
 from app.middlewares.auth_middleware import RequestIDMiddleware
 
 from app.auth.routers.auth_router import router as auth_router
+from app.core.config_router import router as config_router
+from app.engagement.routers.engagement_router import router as engagement_router
+from app.messaging.routers.message_router import router as message_router
+from app.admin.routers.admin_router import router as admin_router
+from app.admin.routers.university_router import router as university_router
 from app.student.routers.profile_router import router as student_profile_router
 
 from app.industry.routers.profile_router import router as industry_profile_router
@@ -15,6 +20,7 @@ from app.industry.routers.job_router import router as industry_job_router
 from app.industry.routers.dashboard_router import router as industry_dashboard_router
 from app.industry.routers.notification_router import router as industry_notification_router
 from app.industry.routers.feed_router import router as industry_feed_router
+from app.industry.routers.post_router import router as industry_post_router
 
 from app.alumni.routers.profile_router import router as alumni_profile_router
 from app.alumni.routers.post_router import router as alumni_post_router
@@ -34,6 +40,11 @@ app.add_middleware(RequestIDMiddleware)
 
 app.add_middleware(LoggingMiddleware)
 
+
+app.include_router(
+    config_router,
+    prefix=settings.API_PREFIX
+)
 
 app.include_router(
     auth_router,
@@ -67,6 +78,10 @@ app.include_router(
     industry_feed_router,
     prefix=f"{settings.API_PREFIX}/industry"
 )
+app.include_router(
+    industry_post_router,
+    prefix=f"{settings.API_PREFIX}/industry"
+)
 
 # Alumni Routers
 app.include_router(
@@ -93,6 +108,27 @@ app.include_router(
 # Shared Community Feed (also available directly at /api/feed for all users)
 app.include_router(
     alumni_feed_router,
+    prefix=settings.API_PREFIX
+)
+
+
+# Post engagement (likes, dislikes, comments) and Inbox
+app.include_router(
+    engagement_router,
+    prefix=settings.API_PREFIX
+)
+app.include_router(
+    message_router,
+    prefix=settings.API_PREFIX
+)
+
+# Admin portal, official university posts and post reports
+app.include_router(
+    admin_router,
+    prefix=settings.API_PREFIX
+)
+app.include_router(
+    university_router,
     prefix=settings.API_PREFIX
 )
 

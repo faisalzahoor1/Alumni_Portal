@@ -20,6 +20,9 @@ class User(BaseModel):
 
     is_verified: bool = False
 
+    # pending | approved | rejected for roles in Approval.ROLES; None means approved (legacy accounts)
+    approval_status: str | None = None
+
     created_at: datetime = Field(default_factory=datetime.utcnow)
 
     updated_at: datetime = Field(default_factory=datetime.utcnow)

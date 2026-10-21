@@ -4,6 +4,7 @@ from app.alumni.repositories.post_repository import PostRepository
 from app.alumni.models.post import Post
 from app.alumni.schemas.feed_schema import FeedResponse
 from app.alumni.schemas.post_schema import PostResponse
+from app.engagement.services.engagement_service import EngagementService
 
 
 class FeedService:
@@ -14,7 +15,8 @@ class FeedService:
         author_role: Optional[str] = None,
         search: Optional[str] = None,
         page: int = 1,
-        limit: int = 20
+        limit: int = 20,
+        viewer_id: Optional[str] = None
     ) -> FeedResponse:
         roles: Optional[List[str]] = [author_role] if author_role else ["alumni", "industry"]
         skip = (page - 1) * limit
@@ -33,6 +35,8 @@ class FeedService:
         )
 
         post_responses = [PostResponse(**post.model_dump()) for post in posts]
+        if viewer_id:
+            await EngagementService.attach_my_reactions(post_responses, viewer_id)
         has_more = (skip + len(posts)) < total
 
         return FeedResponse(
@@ -44,11 +48,14 @@ class FeedService:
         )
 
     @staticmethod
-    async def get_feed_post(post_id: str) -> PostResponse:
+    async def get_feed_post(post_id: str, viewer_id: Optional[str] = None) -> PostResponse:
         post = await PostRepository.get_by_id(post_id)
         if not post or not post.is_public:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="Post not found in community feed"
             )
-        return PostResponse(**post.model_dump())
+        response = PostResponse(**post.model_dump())
+        if viewer_id:
+            await EngagementService.attach_my_reactions([response], viewer_id)
+        return response

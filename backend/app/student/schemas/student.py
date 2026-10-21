@@ -29,3 +29,5 @@ class StudentResponse(BaseModel):
     instagram_url: HttpUrl | None = None
 
     cv: CVResponse | None = None
+
+    avatar_url: str | None = None

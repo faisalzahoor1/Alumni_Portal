@@ -1,7 +1,8 @@
 from app.industry.repositories.profile_repository import IndustryProfileRepository
 from app.industry.models.industry import IndustryProfile
 from app.industry.schemas.profile_schema import IndustryProfileUpdate
-from fastapi import HTTPException, status
+from fastapi import HTTPException, UploadFile, status
+from app.common.avatar_service import AvatarService
 
 class IndustryProfileService:
     
@@ -24,3 +25,13 @@ class IndustryProfileService:
         if not profile:
             raise HTTPException(status_code=404, detail="Profile not found")
         return profile
+
+    @staticmethod
+    async def upload_logo(user_id: str, file: UploadFile) -> IndustryProfile:
+        logo_url = await AvatarService.upload(file, folder="alumni_portal/logos")
+        profile = await IndustryProfileRepository.update_profile(user_id, {"logo_url": logo_url})
+        if not profile:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found")
+        await AvatarService.propagate(user_id, logo_url)
+        return profile
+

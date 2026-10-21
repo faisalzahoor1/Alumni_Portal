@@ -21,6 +21,7 @@ class Post(BaseModel):
     post_type: str = "job_opportunity"  # "job_opportunity", "announcement", "achievement", "general"
     tags: List[str] = Field(default_factory=list)
     likes_count: int = 0
+    dislikes_count: int = 0
     comments_count: int = 0
     is_public: bool = True
 

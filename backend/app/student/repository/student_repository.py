@@ -105,3 +105,11 @@ class StudentRepository:
                 "$set": update_data
             }
         )
+
+    @staticmethod
+    async def update_avatar(registration_no: str, avatar_url: str):
+        await mongodb.database[Collections.STUDENTS].update_one(
+            {"registration_no": registration_no},
+            {"$set": {"avatar_url": avatar_url, "updated_at": datetime.now(timezone.utc)}}
+        )
+
